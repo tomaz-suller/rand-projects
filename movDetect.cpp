@@ -11,9 +11,9 @@ Mat processing(Mat frame){
 
     cvtColor(frame, frame, CV_RGB2GRAY);
 
-    int dilation_size = 4;
+    int dilation_size = 2;
         
-    threshold(frame, frame, 50, 255, 0);
+    threshold(frame, frame, 50, 255, THRESH_TOZERO);
     dilate(frame, frame, getStructuringElement(MORPH_RECT, Size(1.5*dilation_size, 1.5*dilation_size), Point(dilation_size, dilation_size)) );
 
     return frame;
@@ -22,12 +22,20 @@ Mat processing(Mat frame){
 
 int main(){
 
-    Mat frame1, fgm1;
-    Mat frame2, fgm2;
-    Mat result;
+    Mat frame1, frame2, result;
+
+    Rect movarea, checkarea;
 
     int movement;
-    int tresh = 250;
+    int thresh = 500;
+
+    int i, j;
+    i, j = 0;
+    
+    int x0, y0;
+    x0, y0 = 0; 
+    int h, w;    
+
     VideoCapture vid(0);
 
     if(!vid.isOpened()){ 
@@ -41,27 +49,43 @@ int main(){
 
         vid >> frame2;
 
-        result = processing(frame2-frame1);
-        Rect movarea = boundingRect(result);
+        cvtColor(frame2-frame1, result, CV_RGB2GRAY);
 
-        for(int i = movarea.y; i < movarea.height + movarea.y; i++)
-            for(int j = movarea.x; j < movarea.width + movarea.x; j++)
+        result = processing(frame2-frame1);
+        movarea = boundingRect(result);
+
+        if(2*movarea.area() >= (result.cols*result.rows)){
+            
+            Size size = result.size();
+
+            resize(result, result, Size(100, 100), 2, 2);
+            Rect checkarea = boundingRect(result);
+            thresh = 100;
+
+        }else checkarea = movarea;
+    
+        x0 = checkarea.x;
+        y0 = checkarea.y;
+
+        w = checkarea.width + x0;
+        h = checkarea.height + y0;
+        
+        for(i = y0; i < h && movement <= thresh; i++)
+            for(j = x0; j < w && movement <= thresh; j++)
                 if(result.at<uchar>(i,j) > 0) movement++;
         
-        if(movement > tresh){
+        if(movement > thresh){
             std::cout << "MOVING\n";
             rectangle(frame1, movarea, Scalar(255, 0, 0), 2);
         }else std::cout << std::endl;
 
         imshow("Original", frame1);
-        
-        rectangle(result, movarea, Scalar(255, 0, 0));
-        imshow("Processing", result);
 
-        vid >> frame1;
         movement = 0;
 
         if(waitKey(10) == 27) break;
+
+        vid >> frame1;
 
     }
 
