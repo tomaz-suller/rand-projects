@@ -13,7 +13,7 @@ Mat processing(Mat frame){
 
     int dilation_size = 2;
         
-    threshold(frame, frame, 50, 255, THRESH_TOZERO);
+    threshold(frame, frame, 30, 255, 0);
     dilate(frame, frame, getStructuringElement(MORPH_RECT, Size(1.5*dilation_size, 1.5*dilation_size), Point(dilation_size, dilation_size)) );
 
     return frame;
@@ -70,11 +70,7 @@ int main(){
         w = checkarea.width + x0;
         h = checkarea.height + y0;
         
-        for(i = y0; i < h && movement <= thresh; i++)
-            for(j = x0; j < w && movement <= thresh; j++)
-                if(result.at<uchar>(i,j) > 0) movement++;
-        
-        if(movement > thresh){
+        if(sum(result)[0]/255 > thresh){
             std::cout << "MOVING\n";
             rectangle(frame1, movarea, Scalar(255, 0, 0), 2);
         }else std::cout << std::endl;
